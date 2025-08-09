@@ -14,7 +14,36 @@ A Python command-line application that updates directory modification dates to a
 
 ## Installation
 
-### From Source
+### Windows 11
+
+1. **Install Python 3.13 or higher**:
+   - Download from [python.org](https://www.python.org/downloads/)
+   - During installation, check "Add Python to PATH"
+   - Verify installation: open Command Prompt and run `python --version`
+
+2. **Clone or download this repository**:
+   ```cmd
+   git clone <repository-url>
+   cd UpdateDirDates
+   ```
+
+3. **Create and activate a virtual environment**:
+   ```cmd
+   python -m venv venv
+   venv\Scripts\activate
+   ```
+
+4. **Install the package**:
+   ```cmd
+   pip install -e .
+   ```
+
+5. **Verify installation**:
+   ```cmd
+   updatedirdates --version
+   ```
+
+### From Source (General)
 
 1. Clone or download this repository
 2. Create a virtual environment:
