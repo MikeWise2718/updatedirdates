@@ -2,7 +2,7 @@
 9 August 2025 - Mike Wise
 
 # Purpose
-These are specs for an "UpdateDirDates" App - it sets modified dates on a set of directories to accurately reflect the latest modified dates of the files in that directory or in sub-directories. These will sometimes get out of synchronization when directories are copied or files are delete.
+These are specs for an "UpdateDirDates" App - it sets modified dates on a set of directories to accurately reflect the latest modified dates of the files (not subdirectories) in that directory or in sub-directories. Only actual file modification times are considered, not subdirectory modification times which may have incorrect copy dates. These will sometimes get out of synchronization when directories are copied or files are deleted.
 
 
 # Tech and Structure

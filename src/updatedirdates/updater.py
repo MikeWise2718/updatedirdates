@@ -42,7 +42,8 @@ class DirectoryUpdater:
         print(message)
         
     def get_latest_modification_time(self, directory: Path) -> tuple[float, int, int]:
-        """Get the latest modification time from files in directory and subdirectories.
+        """Get the latest modification time from files directly in directory.
+        If no files present, use latest modification time from subdirectories.
         
         Args:
             directory: Directory to scan
@@ -53,35 +54,35 @@ class DirectoryUpdater:
         latest_time = 0.0
         dir_count = 0
         file_count = 0
+        subdirs = []
         
         try:
-            for root, dirs, files in os.walk(directory):
-                root_path = Path(root)
-                
-                # Count and check all files in current directory
-                for file in files:
-                    file_path = root_path / file
+            # Only examine direct children of this directory, not recursive
+            for item in directory.iterdir():
+                if item.is_file():
                     try:
-                        file_stat = file_path.stat()
+                        file_stat = item.stat()
                         latest_time = max(latest_time, file_stat.st_mtime)
                         file_count += 1
                     except (OSError, IOError) as e:
                         if self.verbosity >= 2:
-                            self.print_warning(f"Could not stat file {file_path}: {e}")
-                        
-                # Count and check subdirectories (but don't update their times yet)
-                for dir_name in dirs:
-                    dir_path = root_path / dir_name
+                            self.print_warning(f"Could not stat file {item}: {e}")
+                elif item.is_dir():
+                    subdirs.append(item)
+                    dir_count += 1
+            
+            # If no files found, use latest modification time from subdirectories
+            if file_count == 0 and subdirs:
+                for subdir in subdirs:
                     try:
-                        dir_stat = dir_path.stat()
-                        latest_time = max(latest_time, dir_stat.st_mtime)
-                        dir_count += 1
+                        subdir_stat = subdir.stat()
+                        latest_time = max(latest_time, subdir_stat.st_mtime)
                     except (OSError, IOError) as e:
                         if self.verbosity >= 2:
-                            self.print_warning(f"Could not stat directory {dir_path}: {e}")
+                            self.print_warning(f"Could not stat directory {subdir}: {e}")
                             
         except (OSError, IOError) as e:
-            self.print_error(f"Error walking directory {directory}: {e}")
+            self.print_error(f"Error reading directory {directory}: {e}")
             return directory.stat().st_mtime, 0, 0
             
         return latest_time, dir_count, file_count
@@ -100,9 +101,9 @@ class DirectoryUpdater:
             current_time = current_stat.st_mtime
             latest_time, dir_count, file_count = self.get_latest_modification_time(directory)
             
-            # Consider updating if the latest file time is newer than directory time
+            # Consider updating if the latest file time differs from directory time
             # Add a small tolerance (1 second) to avoid floating point precision issues
-            needs_update = latest_time > (current_time + 1.0)
+            needs_update = abs(latest_time - current_time) > 1.0
             
             return needs_update, current_time, latest_time, dir_count, file_count
             
