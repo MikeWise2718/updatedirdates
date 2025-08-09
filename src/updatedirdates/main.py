@@ -49,9 +49,9 @@ Examples:
     parser.add_argument(
         "-v", "--verbosity",
         type=int,
-        choices=[0, 1, 2],
+        choices=[0, 1, 2, 3],
         default=0,
-        help="Verbosity level: 0=quiet, 1=first level dirs, 2=all dirs (default: 0)",
+        help="Verbosity level: 0=quiet, 1=first level dirs, 2=all dirs, 3=all dirs+source files (default: 0)",
     )
     
     parser.add_argument(

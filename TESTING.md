@@ -4,13 +4,13 @@ This document describes how to run tests, check code coverage, and understand th
 
 ## Current Test Coverage
 
-**Current coverage: 96.43%** ✅ (Target: 80%+)
+**Current coverage: 98.19%** ✅ (Target: 80%+)
 
 ### Coverage Breakdown
 - `src/updatedirdates/__init__.py`: 100%
 - `src/updatedirdates/main.py`: 95%  
-- `src/updatedirdates/updater.py`: 97%
-- **Total**: 96.43%
+- `src/updatedirdates/updater.py`: 100%
+- **Total**: 98.19%
 
 ## Running Tests
 
@@ -94,16 +94,15 @@ addopts = "--cov=src/updatedirdates --cov-report=html --cov-report=term-missing 
 ## Test Coverage Goals
 
 ### Lines Not Covered
-Current uncovered lines (6 total out of 168):
+Current uncovered lines (3 total out of 166):
 
 1. `src/updatedirdates/main.py`: Lines 100-101, 156
-2. `src/updatedirdates/updater.py`: Lines 75-77
 
 These are mostly edge cases or platform-specific code paths that are difficult to test reliably.
 
 ### Coverage Targets
 - **Minimum required**: 80%
-- **Current achievement**: 96.43%
+- **Current achievement**: 98.19%
 - **Target for new code**: 95%+
 
 ## Running Quality Checks
@@ -250,4 +249,4 @@ When contributing new features:
 ---
 
 Last updated: August 2025
-Current coverage: 96.43%
+Current coverage: 98.19%

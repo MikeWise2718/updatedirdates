@@ -23,7 +23,7 @@ class DirectoryUpdater:
         """Initialize the DirectoryUpdater.
         
         Args:
-            verbosity: Output verbosity level (0=quiet, 1=first level, 2=all)
+            verbosity: Output verbosity level (0=quiet, 1=first level, 2=all, 3=all+source)
             dry_run: If True, don't actually modify dates
             print_colored: Function to print colored messages
             print_error: Function to print error messages
@@ -41,75 +41,72 @@ class DirectoryUpdater:
         """Default print function."""
         print(message)
         
-    def get_latest_modification_time(self, directory: Path) -> tuple[float, int, int]:
-        """Get the latest modification time from files directly in directory.
-        If no files present, use latest modification time from subdirectories.
+    def get_latest_modification_time(self, directory: Path) -> tuple[float, int, int, Optional[Path]]:
+        """Get the latest modification time from all files in directory and subdirectories.
+        Only considers file modification times, not directory timestamps (per specs).
         
         Args:
-            directory: Directory to scan
+            directory: Directory to scan recursively
             
         Returns:
-            Tuple of (latest_modification_time, dir_count, file_count)
+            Tuple of (latest_modification_time, dir_count, file_count, source_file_path)
         """
         latest_time = 0.0
-        dir_count = 0
-        file_count = 0
-        subdirs = []
+        total_dir_count = 0
+        total_file_count = 0
+        source_file = None
         
         try:
-            # Only examine direct children of this directory, not recursive
-            for item in directory.iterdir():
-                if item.is_file():
+            # Use os.walk to recursively find all files
+            for root, dirs, files in os.walk(directory):
+                root_path = Path(root)
+                
+                # Count directories (only immediate subdirectories of the main directory)
+                if root_path == directory:
+                    total_dir_count = len(dirs)
+                
+                # Process all files in this directory level
+                for filename in files:
+                    file_path = root_path / filename
                     try:
-                        file_stat = item.stat()
-                        latest_time = max(latest_time, file_stat.st_mtime)
-                        file_count += 1
+                        file_stat = file_path.stat()
+                        if file_stat.st_mtime > latest_time:
+                            latest_time = file_stat.st_mtime
+                            source_file = file_path
+                        total_file_count += 1
                     except (OSError, IOError) as e:
                         if self.verbosity >= 2:
-                            self.print_warning(f"Could not stat file {item}: {e}")
-                elif item.is_dir():
-                    subdirs.append(item)
-                    dir_count += 1
-            
-            # If no files found, use latest modification time from subdirectories
-            if file_count == 0 and subdirs:
-                for subdir in subdirs:
-                    try:
-                        subdir_stat = subdir.stat()
-                        latest_time = max(latest_time, subdir_stat.st_mtime)
-                    except (OSError, IOError) as e:
-                        if self.verbosity >= 2:
-                            self.print_warning(f"Could not stat directory {subdir}: {e}")
+                            self.print_warning(f"Could not stat file {file_path}: {e}")
                             
         except (OSError, IOError) as e:
             self.print_error(f"Error reading directory {directory}: {e}")
-            return directory.stat().st_mtime, 0, 0
+            return directory.stat().st_mtime, 0, 0, None
             
-        return latest_time, dir_count, file_count
+        return latest_time, total_dir_count, total_file_count, source_file
         
-    def should_update_directory(self, directory: Path) -> tuple[bool, float, float, int, int]:
+    def should_update_directory(self, directory: Path) -> tuple[bool, float, float, int, int, Optional[Path]]:
         """Check if directory needs updating and return relevant times and counts.
         
         Args:
             directory: Directory to check
             
         Returns:
-            Tuple of (needs_update, current_time, latest_time, dir_count, file_count)
+            Tuple of (needs_update, current_time, latest_time, dir_count, file_count, source_file)
         """
         try:
             current_stat = directory.stat()
             current_time = current_stat.st_mtime
-            latest_time, dir_count, file_count = self.get_latest_modification_time(directory)
+            latest_time, dir_count, file_count, source_file = self.get_latest_modification_time(directory)
             
-            # Consider updating if the latest file time differs from directory time
-            # Add a small tolerance (1 second) to avoid floating point precision issues
+            # Always update directory to match the newest file, regardless of current directory time
+            # Add a small tolerance (1 second) to avoid floating point precision issues with identical times
             needs_update = abs(latest_time - current_time) > 1.0
             
-            return needs_update, current_time, latest_time, dir_count, file_count
+            return needs_update, current_time, latest_time, dir_count, file_count, source_file
             
         except (OSError, IOError) as e:
             self.print_error(f"Error checking directory {directory}: {e}")
-            return False, 0.0, 0.0, 0, 0
+            return False, 0.0, 0.0, 0, 0, None
             
     def update_directory_date(self, directory: Path, new_time: float) -> bool:
         """Update directory modification time.
@@ -154,7 +151,7 @@ class DirectoryUpdater:
             return 0
             
         # Now process the current directory
-        needs_update, current_time, latest_time, dir_count, file_count = self.should_update_directory(root_directory)
+        needs_update, current_time, latest_time, dir_count, file_count, source_file = self.should_update_directory(root_directory)
         
         # Print directory status based on verbosity level
         if self.verbosity >= 2 or (self.verbosity >= 1 and depth <= 1):
@@ -174,6 +171,19 @@ class DirectoryUpdater:
                         f"({self._format_timestamp(current_time)}){count_info}",
                         ""
                     )
+            
+            # Print source file info for verbosity level 3
+            if self.verbosity >= 3:
+                if source_file:
+                    try:
+                        source_mtime = source_file.stat().st_mtime
+                        source_time_str = self._format_timestamp(source_mtime)
+                        source_info = f"{source_file} ({source_time_str})"
+                    except (OSError, IOError):
+                        source_info = f"{source_file} (timestamp unavailable)"
+                else:
+                    source_info = "none"
+                self.print_colored(f"  Source file: {source_info}", "")
                     
         # Update directory if needed
         if needs_update:

@@ -6,7 +6,8 @@
       "Bash(venvScripts:*)",
       "Bash(pip install:*)",
       "Bash(source:*)",
-      "Bash(updatedirdates:*)"
+      "Bash(updatedirdates:*)",
+      "Bash(git push:*)"
     ],
     "deny": []
   }
