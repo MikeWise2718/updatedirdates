@@ -1,0 +1,2 @@
+[console_scripts]
+updatedirdates = updatedirdates.main:main

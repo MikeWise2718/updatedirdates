@@ -1,0 +1,12 @@
+pyproject.toml
+src/updatedirdates/__init__.py
+src/updatedirdates/main.py
+src/updatedirdates/updater.py
+src/updatedirdates.egg-info/PKG-INFO
+src/updatedirdates.egg-info/SOURCES.txt
+src/updatedirdates.egg-info/dependency_links.txt
+src/updatedirdates.egg-info/entry_points.txt
+src/updatedirdates.egg-info/requires.txt
+src/updatedirdates.egg-info/top_level.txt
+tests/test_main.py
+tests/test_updater.py
